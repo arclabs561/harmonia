@@ -1,8 +1,8 @@
-# harmonia-theory
+# harmonia
 
 Symbolic helpers for **functional harmony** (roman numerals, tonicization, relative-major/minor pivots).
 
-This is currently an MVP crate for experimentation inside a larger dev workspace.
+This is currently an MVP crate for symbolic functional harmony.
 
 ## Public invariants (short)
 
@@ -22,14 +22,14 @@ This is currently an MVP crate for experimentation inside a larger dev workspace
 Single chord in a key (secondary dominant):
 
 ```bash
-cargo run -p harmonia-theory --features cli --bin harmonia -- \
+cargo run --features cli --bin harmonia -- \
   --key C:maj chord --chord "E G# B D"
 ```
 
 Progression in a key (cadence hints are heuristic):
 
 ```bash
-cargo run -p harmonia-theory --features cli --bin harmonia -- \
+cargo run --features cli --bin harmonia -- \
   --key C:maj prog --prog "G B D; A C E; C E G"
 ```
 

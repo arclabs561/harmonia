@@ -1,4 +1,4 @@
-//! `harmonia-theory`: functional harmony helpers (MVP).
+//! `harmonia`: functional harmony helpers (MVP).
 //!
 //! ## Public invariants (must not change without a major version bump)
 //!
@@ -288,7 +288,11 @@ pub fn dedup_sort_pcs(mut pcs: Vec<PitchClass>) -> Vec<PitchClass> {
 /// Analyze a chord (given as pitch classes) in the given key.
 ///
 /// The output is a list of candidates, best-first, and may be ambiguous.
-pub fn analyze_chord_in_key(key: &Key, chord: &[PitchClass], opts: &AnalyzeChordOptions) -> Vec<Analysis> {
+pub fn analyze_chord_in_key(
+    key: &Key,
+    chord: &[PitchClass],
+    opts: &AnalyzeChordOptions,
+) -> Vec<Analysis> {
     let chord = dedup_sort_pcs(chord.to_vec());
     if chord.len() < 3 {
         return Vec::new();
@@ -300,23 +304,25 @@ pub fn analyze_chord_in_key(key: &Key, chord: &[PitchClass], opts: &AnalyzeChord
     }
 
     let mut out: Vec<(i32, Analysis)> = Vec::new();
-    let chord_is_in_key_pitch_set = chord.iter().all(|&pc| pitch_class_is_in_key_pitch_set(*key, pc));
+    let chord_is_in_key_pitch_set = chord
+        .iter()
+        .all(|&pc| pitch_class_is_in_key_pitch_set(*key, pc));
 
     for sp in &spellings {
         // 1) Diatonic roman numeral candidate.
         if chord_is_in_key_pitch_set {
             if let Some((deg, deg_pc, deg_note)) = scale_degree_in_key_extended(key, sp.root) {
-            let rn = roman_for_degree(deg, sp.quality, sp.seventh);
-            let reason = format!(
-                "root {} is scale degree {} (pc {}) in {}{}",
-                sp.root.display_sharp(),
-                deg,
-                deg_pc.display_sharp(),
-                key.display(),
-                deg_note
-            );
-            // Prefer diatonic interpretations.
-            out.push((0, Analysis { label: rn, reason }));
+                let rn = roman_for_degree(deg, sp.quality, sp.seventh);
+                let reason = format!(
+                    "root {} is scale degree {} (pc {}) in {}{}",
+                    sp.root.display_sharp(),
+                    deg,
+                    deg_pc.display_sharp(),
+                    key.display(),
+                    deg_note
+                );
+                // Prefer diatonic interpretations.
+                out.push((0, Analysis { label: rn, reason }));
             }
         }
 
@@ -468,20 +474,33 @@ impl ChordSpelling {
 fn detect_chord_spellings(chord: &[PitchClass]) -> Vec<ChordSpelling> {
     let mut out = Vec::new();
     for &root in chord {
-        let intervals: Vec<u8> = chord
-            .iter()
-            .map(|&pc| interval_from_to(root, pc))
-            .collect();
+        let intervals: Vec<u8> = chord.iter().map(|&pc| interval_from_to(root, pc)).collect();
         // Triads
         if chord.len() == 3 {
             if matches_set(&intervals, &[0, 4, 7]) {
-                out.push(ChordSpelling { root, quality: TriadQuality::Major, seventh: None });
+                out.push(ChordSpelling {
+                    root,
+                    quality: TriadQuality::Major,
+                    seventh: None,
+                });
             } else if matches_set(&intervals, &[0, 3, 7]) {
-                out.push(ChordSpelling { root, quality: TriadQuality::Minor, seventh: None });
+                out.push(ChordSpelling {
+                    root,
+                    quality: TriadQuality::Minor,
+                    seventh: None,
+                });
             } else if matches_set(&intervals, &[0, 3, 6]) {
-                out.push(ChordSpelling { root, quality: TriadQuality::Diminished, seventh: None });
+                out.push(ChordSpelling {
+                    root,
+                    quality: TriadQuality::Diminished,
+                    seventh: None,
+                });
             } else if matches_set(&intervals, &[0, 4, 8]) {
-                out.push(ChordSpelling { root, quality: TriadQuality::Augmented, seventh: None });
+                out.push(ChordSpelling {
+                    root,
+                    quality: TriadQuality::Augmented,
+                    seventh: None,
+                });
             }
         }
         // Sevenths
@@ -570,7 +589,10 @@ fn pitch_class_is_in_key_pitch_set(key: Key, pc: PitchClass) -> bool {
     false
 }
 
-fn scale_degree_in_key_extended(key: &Key, pc: PitchClass) -> Option<(u8, PitchClass, &'static str)> {
+fn scale_degree_in_key_extended(
+    key: &Key,
+    pc: PitchClass,
+) -> Option<(u8, PitchClass, &'static str)> {
     if let Some((deg, dpc)) = scale_degree_in_key(key, pc) {
         return Some((deg, dpc, ""));
     }
@@ -627,7 +649,10 @@ fn tonicization_target_in_key(key: &Key, dom_root: PitchClass) -> Option<Toniciz
     // MVP heuristic: assume diatonic triad quality by mode+degree.
     let target_quality = diatonic_triad_quality(key.mode, deg);
     let target_rn = roman_for_degree(deg, target_quality, None);
-    Some(TonicizationTarget { target_pc, target_rn })
+    Some(TonicizationTarget {
+        target_pc,
+        target_rn,
+    })
 }
 
 fn diatonic_triad_quality(mode: KeyMode, deg: u8) -> TriadQuality {
@@ -685,10 +710,7 @@ mod tests {
             PitchClass::parse("D").expect("D"),
         ]);
         let analyses = analyze_chord_in_key(&key, &chord, &AnalyzeChordOptions::default());
-        assert!(
-            analyses.iter().any(|a| a.label == "V7/vi"),
-            "{analyses:?}"
-        );
+        assert!(analyses.iter().any(|a| a.label == "V7/vi"), "{analyses:?}");
     }
 
     #[test]
@@ -705,8 +727,16 @@ mod tests {
         let e = PitchClass::parse("E").expect("E");
 
         // Check it belongs to both tonic triads (pitch-class-only statement).
-        let c_tonic = [PitchClass::parse("C").expect("C"), e, PitchClass::parse("G").expect("G")];
-        let a_tonic = [PitchClass::parse("A").expect("A"), PitchClass::parse("C").expect("C"), e];
+        let c_tonic = [
+            PitchClass::parse("C").expect("C"),
+            e,
+            PitchClass::parse("G").expect("G"),
+        ];
+        let a_tonic = [
+            PitchClass::parse("A").expect("A"),
+            PitchClass::parse("C").expect("C"),
+            e,
+        ];
 
         assert!(c_tonic.contains(&e));
         assert!(a_tonic.contains(&e));
@@ -724,15 +754,7 @@ mod tests {
         assert_eq!(piv.minor.display(), "A:min");
 
         // Expected degree map (major -> minor) for relative minor.
-        let expected = [
-            (1u8, 3u8),
-            (2, 4),
-            (3, 5),
-            (4, 6),
-            (5, 7),
-            (6, 1),
-            (7, 2),
-        ];
+        let expected = [(1u8, 3u8), (2, 4), (3, 5), (4, 6), (5, 7), (6, 1), (7, 2)];
 
         for (i, (m, n)) in expected.iter().enumerate() {
             assert_eq!(piv.pivots[i].major_degree, Degree(*m));
@@ -747,12 +769,24 @@ mod tests {
             mode: KeyMode::Major,
         };
         let chords = vec![
-            dedup_sort_pcs(vec!["G", "B", "D"].into_iter().map(|s| PitchClass::parse(s).unwrap()).collect()),
-            dedup_sort_pcs(vec!["C", "E", "G"].into_iter().map(|s| PitchClass::parse(s).unwrap()).collect()),
+            dedup_sort_pcs(
+                vec!["G", "B", "D"]
+                    .into_iter()
+                    .map(|s| PitchClass::parse(s).unwrap())
+                    .collect(),
+            ),
+            dedup_sort_pcs(
+                vec!["C", "E", "G"]
+                    .into_iter()
+                    .map(|s| PitchClass::parse(s).unwrap())
+                    .collect(),
+            ),
         ];
         let pa = analyze_progression_in_key(&key, &chords, &AnalyzeChordOptions::default());
         assert!(
-            pa.cadence_hints.iter().any(|h| h.kind == CadenceKind::Authentic && h.resolves_at == 1),
+            pa.cadence_hints
+                .iter()
+                .any(|h| h.kind == CadenceKind::Authentic && h.resolves_at == 1),
             "{:?}",
             pa.cadence_hints
         );
@@ -791,12 +825,24 @@ mod tests {
             mode: KeyMode::Major,
         };
         let chords = vec![
-            dedup_sort_pcs(vec!["G", "B", "D"].into_iter().map(|s| PitchClass::parse(s).unwrap()).collect()),
-            dedup_sort_pcs(vec!["A", "C", "E"].into_iter().map(|s| PitchClass::parse(s).unwrap()).collect()),
+            dedup_sort_pcs(
+                vec!["G", "B", "D"]
+                    .into_iter()
+                    .map(|s| PitchClass::parse(s).unwrap())
+                    .collect(),
+            ),
+            dedup_sort_pcs(
+                vec!["A", "C", "E"]
+                    .into_iter()
+                    .map(|s| PitchClass::parse(s).unwrap())
+                    .collect(),
+            ),
         ];
         let pa = analyze_progression_in_key(&key, &chords, &AnalyzeChordOptions::default());
         assert!(
-            pa.cadence_hints.iter().any(|h| h.kind == CadenceKind::Deceptive && h.resolves_at == 1),
+            pa.cadence_hints
+                .iter()
+                .any(|h| h.kind == CadenceKind::Deceptive && h.resolves_at == 1),
             "{:?}",
             pa.cadence_hints
         );

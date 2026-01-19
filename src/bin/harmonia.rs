@@ -1,10 +1,10 @@
-//! Minimal CLI for `harmonia-theory`.
+//! Minimal CLI for `harmonia`.
 //!
 //! This binary is intentionally tiny: it exists mainly as a debugging lens for the library.
 
 use clap::Parser;
 
-use harmonia_theory::{AnalyzeChordOptions, CadenceHint, Key, KeyMode, PitchClass, ProgressionAnalysis};
+use harmonia::{AnalyzeChordOptions, CadenceHint, Key, KeyMode, PitchClass, ProgressionAnalysis};
 
 #[derive(Debug, Parser)]
 #[command(name = "harmonia")]
@@ -64,7 +64,7 @@ fn main() -> Result<(), String> {
             let opts = AnalyzeChordOptions {
                 allow_tonicization: !no_tonicization,
             };
-            let analyses = harmonia_theory::analyze_chord_in_key(&key, &chord_pcs, &opts);
+            let analyses = harmonia::analyze_chord_in_key(&key, &chord_pcs, &opts);
             print_chord_result(cli.json, &key, &chord_pcs, &analyses);
         }
         Command::Prog {
@@ -75,7 +75,7 @@ fn main() -> Result<(), String> {
             let opts = AnalyzeChordOptions {
                 allow_tonicization: !no_tonicization,
             };
-            let pa = harmonia_theory::analyze_progression_in_key(&key, &chords, &opts);
+            let pa = harmonia::analyze_progression_in_key(&key, &chords, &opts);
             print_prog_result(cli.json, &key, &chords, &pa);
         }
     };
@@ -87,7 +87,7 @@ fn print_chord_result(
     json: bool,
     key: &Key,
     chord_pcs: &[PitchClass],
-    analyses: &[harmonia_theory::Analysis],
+    analyses: &[harmonia::Analysis],
 ) {
     if json {
         // MVP schema: stable keys; values are intentionally simple.
@@ -138,7 +138,14 @@ fn print_prog_result(json: bool, key: &Key, chords: &[Vec<PitchClass>], pa: &Pro
         let cadences: Vec<String> = pa
             .cadence_hints
             .iter()
-            .map(|h| format!("{}:{}:{}", h.resolves_at, cadence_kind_str(h.kind), h.detail))
+            .map(|h| {
+                format!(
+                    "{}:{}:{}",
+                    h.resolves_at,
+                    cadence_kind_str(h.kind),
+                    h.detail
+                )
+            })
             .collect();
         println!(
             "{{\"schema_version\":1,\"key\":\"{}\",\"chords_pcs\":{:?},\"labels\":{:?},\"cadences\":{:?}}}",
@@ -177,10 +184,10 @@ fn print_prog_result(json: bool, key: &Key, chords: &[Vec<PitchClass>], pa: &Pro
     }
 }
 
-fn cadence_kind_str(k: harmonia_theory::CadenceKind) -> &'static str {
+fn cadence_kind_str(k: harmonia::CadenceKind) -> &'static str {
     match k {
-        harmonia_theory::CadenceKind::Authentic => "authentic",
-        harmonia_theory::CadenceKind::Deceptive => "deceptive",
+        harmonia::CadenceKind::Authentic => "authentic",
+        harmonia::CadenceKind::Deceptive => "deceptive",
     }
 }
 
@@ -209,7 +216,7 @@ fn parse_chord_pcs(s: &str) -> Result<Vec<PitchClass>, String> {
     if out.is_empty() {
         return Err("empty --chord; provide note names like \"E G# B D\"".to_string());
     }
-    Ok(harmonia_theory::dedup_sort_pcs(out))
+    Ok(harmonia::dedup_sort_pcs(out))
 }
 
 fn parse_progression(s: &str) -> Result<Vec<Vec<PitchClass>>, String> {
@@ -226,4 +233,3 @@ fn parse_progression(s: &str) -> Result<Vec<Vec<PitchClass>>, String> {
     }
     Ok(chords)
 }
-

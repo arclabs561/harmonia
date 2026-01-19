@@ -1,11 +1,16 @@
 [package]
-name = "harmonia-theory"
+name = "harmonia"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.80"
 license = "MIT OR Apache-2.0"
 description = "Symbolic functional harmony helpers (roman numerals, tonicization, pivots)."
-publish = false
+repository = "https://github.com/arclabs561/harmonia"
+homepage = "https://github.com/arclabs561/harmonia"
+documentation = "https://docs.rs/harmonia"
+readme = "README.md"
+keywords = ["music", "music-theory", "harmony", "roman-numerals"]
+categories = ["multimedia::audio"] # closest stable crates.io category; scope is symbolic theory
 
 [dependencies]
 clap = { version = "4.5", features = ["derive", "wrap_help"], optional = true }
