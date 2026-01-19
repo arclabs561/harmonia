@@ -553,7 +553,7 @@ fn matches_set(got: &[u8], want: &[u8]) -> bool {
 }
 
 fn interval_from_to(root: PitchClass, other: PitchClass) -> u8 {
-    mod12(other.0 as i32 - root.0 as i32) as u8
+    mod12(other.0 as i32 - root.0 as i32)
 }
 
 fn mod12(x: i32) -> u8 {
