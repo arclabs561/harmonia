@@ -23,5 +23,6 @@ cli = ["dep:clap"]
 
 [[bin]]
 name = "harmonia"
+test = false
 path = "src/bin/harmonia.rs"
 required-features = ["cli"]
