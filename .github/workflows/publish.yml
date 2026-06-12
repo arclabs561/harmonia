@@ -17,10 +17,10 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Authenticate to crates.io (OIDC)
       - name: cargo-semver-checks
         uses: obi1kenobi/cargo-semver-checks-action@v2
 
+      - name: Authenticate to crates.io (OIDC)
         uses: rust-lang/crates-io-auth-action@v1
         id: auth
 
