@@ -1,23 +1,24 @@
 # harmonia
 
-Symbolic helpers for **functional harmony** (roman numerals, tonicization, relative-major/minor pivots).
+Functional harmony helpers.
 
-This is currently an MVP crate for symbolic functional harmony.
+This crate provides deterministic, pitch-class-based helpers for roman-numeral
+labels, tonicization candidates, and relative-major/minor pivots.
 
-## Public invariants (short)
+## Public Invariants
 
-- **Pitch-class only**: `C# == Db` in the API.
-- **Deterministic**: same inputs → same outputs (including ordering).
-- **Candidates, not truth**: outputs are plausible labels; ambiguity is expected.
-- **No modulation inference**: `V/x` is a local hint, not a detected key change.
+- Pitch-class only: `C# == Db` in the API.
+- Deterministic: same inputs produce same outputs, including ordering.
+- Candidates, not truth: outputs are plausible labels; ambiguity is expected.
+- No modulation inference: `V/x` is a local hint, not a detected key change.
 
-## Non-goals (for now)
+## Non-Goals
 
 - Audio / ML
 - Full roman-text parsing (`.rntxt`)
 - Enharmonic spelling, voice leading, figured bass
 
-## CLI examples
+## CLI Examples
 
 Single chord in a key (secondary dominant):
 
@@ -32,4 +33,3 @@ Progression in a key (cadence hints are heuristic):
 cargo run --features cli --bin harmonia -- \
   --key C:maj prog --prog "G B D; A C E; C E G"
 ```
-
