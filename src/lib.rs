@@ -863,4 +863,39 @@ mod tests {
         let analyses = analyze_chord_in_key(&key, &chord, &AnalyzeChordOptions::default());
         assert!(analyses.iter().any(|a| a.label == "vii°"), "{analyses:?}");
     }
+
+    #[test]
+    fn all_diatonic_triads_in_g_major() {
+        // The seven diatonic triads of G major (independent music-theory ground
+        // truth) must analyze to I ii iii IV V vi vii°. The existing tests only
+        // exercise the diatonic pipeline in C major, so this covers transposition
+        // (the F# accidental) through chord-spelling, degree mapping, and roman
+        // generation together.
+        let key = Key {
+            tonic: PitchClass::parse("G").unwrap(),
+            mode: KeyMode::Major,
+        };
+        let cases: &[(&[&str], &str)] = &[
+            (&["G", "B", "D"], "I"),
+            (&["A", "C", "E"], "ii"),
+            (&["B", "D", "F#"], "iii"),
+            (&["C", "E", "G"], "IV"),
+            (&["D", "F#", "A"], "V"),
+            (&["E", "G", "B"], "vi"),
+            (&["F#", "A", "C"], "vii°"),
+        ];
+        for (notes, want) in cases {
+            let chord = dedup_sort_pcs(
+                notes
+                    .iter()
+                    .map(|s| PitchClass::parse(s).unwrap())
+                    .collect(),
+            );
+            let analyses = analyze_chord_in_key(&key, &chord, &AnalyzeChordOptions::default());
+            assert!(
+                analyses.iter().any(|a| a.label == *want),
+                "G major {notes:?}: expected {want}, got {analyses:?}"
+            );
+        }
+    }
 }
