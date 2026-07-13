@@ -33,3 +33,8 @@ Progression in a key (cadence hints are heuristic):
 cargo run --features cli --bin harmonia -- \
   --key C:maj prog --prog "G B D; A C E; C E G"
 ```
+
+## License
+
+Licensed under either the [Apache License, Version 2.0](LICENSE-APACHE) or
+the [MIT license](LICENSE-MIT), at your option.
