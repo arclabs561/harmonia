@@ -623,6 +623,13 @@ fn roman_for_degree(deg: u8, quality: TriadQuality, seventh: Option<SeventhQuali
         7 => "VII",
         _ => "?",
     };
+    if matches!(seventh, Some(SeventhQuality::HalfDiminished7)) {
+        return format!("{}ø7", base.to_ascii_lowercase());
+    }
+    if matches!(seventh, Some(SeventhQuality::Diminished7)) {
+        return format!("{}°7", base.to_ascii_lowercase());
+    }
+
     let mut s = match quality {
         TriadQuality::Major => base.to_string(),
         TriadQuality::Minor => base.to_ascii_lowercase(),
@@ -680,6 +687,160 @@ fn diatonic_triad_quality(mode: KeyMode, deg: u8) -> TriadQuality {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn pcs(notes: &[&str]) -> Vec<PitchClass> {
+        notes
+            .iter()
+            .map(|note| PitchClass::parse(note).unwrap())
+            .collect()
+    }
+
+    fn labels(key: &Key, chord: &[PitchClass]) -> Vec<String> {
+        analyze_chord_in_key(key, chord, &AnalyzeChordOptions::default())
+            .into_iter()
+            .map(|analysis| analysis.label)
+            .collect()
+    }
+
+    fn transpose(pc: PitchClass, semitones: u8) -> PitchClass {
+        PitchClass((pc.0 + semitones) % 12)
+    }
+
+    #[test]
+    fn curated_seventh_chords_use_standard_roman_quality_marks() {
+        let c_major = Key {
+            tonic: PitchClass::parse("C").unwrap(),
+            mode: KeyMode::Major,
+        };
+        let a_minor = Key {
+            tonic: PitchClass::parse("A").unwrap(),
+            mode: KeyMode::Minor,
+        };
+
+        for (key, notes, expected) in [
+            (&c_major, &["C", "E", "G", "B"][..], "I7"),
+            (&c_major, &["D", "F", "A", "C"][..], "ii7"),
+            (&c_major, &["G", "B", "D", "F"][..], "V7"),
+            (&c_major, &["B", "D", "F", "A"][..], "viiø7"),
+            (&a_minor, &["G#", "B", "D", "F"][..], "vii°7"),
+        ] {
+            let actual = labels(key, &pcs(notes));
+            assert!(
+                actual.iter().any(|label| label == expected),
+                "{notes:?} in {}: expected {expected}, got {actual:?}",
+                key.display()
+            );
+        }
+    }
+
+    #[test]
+    fn analysis_is_invariant_under_all_transpositions() {
+        let cases = [
+            (
+                Key {
+                    tonic: PitchClass::parse("C").unwrap(),
+                    mode: KeyMode::Major,
+                },
+                pcs(&["C", "E", "G"]),
+            ),
+            (
+                Key {
+                    tonic: PitchClass::parse("C").unwrap(),
+                    mode: KeyMode::Major,
+                },
+                pcs(&["D", "F#", "A"]),
+            ),
+            (
+                Key {
+                    tonic: PitchClass::parse("C").unwrap(),
+                    mode: KeyMode::Major,
+                },
+                pcs(&["E", "G#", "B", "D"]),
+            ),
+            (
+                Key {
+                    tonic: PitchClass::parse("A").unwrap(),
+                    mode: KeyMode::Minor,
+                },
+                pcs(&["E", "G#", "B"]),
+            ),
+        ];
+
+        for (base_key, chord) in cases {
+            let expected = labels(&base_key, &chord);
+            for semitones in 0..12 {
+                let key = Key {
+                    tonic: transpose(base_key.tonic, semitones),
+                    mode: base_key.mode,
+                };
+                let transposed: Vec<_> = chord
+                    .iter()
+                    .copied()
+                    .map(|pc| transpose(pc, semitones))
+                    .collect();
+                assert_eq!(
+                    labels(&key, &transposed),
+                    expected,
+                    "key={base_key:?}, transposition={semitones}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn analysis_is_invariant_under_note_order_and_duplicates() {
+        let key = Key {
+            tonic: PitchClass::parse("C").unwrap(),
+            mode: KeyMode::Major,
+        };
+        let expected = labels(&key, &pcs(&["E", "G#", "B", "D"]));
+        for notes in [
+            pcs(&["D", "B", "G#", "E"]),
+            pcs(&["G#", "E", "D", "B"]),
+            pcs(&["E", "G#", "B", "D", "E", "B"]),
+        ] {
+            assert_eq!(labels(&key, &notes), expected);
+        }
+    }
+
+    #[test]
+    fn curated_major_and_minor_cadences_match_mvp_taxonomy() {
+        let opts = AnalyzeChordOptions::default();
+        for (key, chords, expected_kind, expected_detail) in [
+            (
+                Key {
+                    tonic: PitchClass::parse("C").unwrap(),
+                    mode: KeyMode::Major,
+                },
+                vec![pcs(&["G", "B", "D", "F"]), pcs(&["C", "E", "G"])],
+                CadenceKind::Authentic,
+                "V7 → I",
+            ),
+            (
+                Key {
+                    tonic: PitchClass::parse("A").unwrap(),
+                    mode: KeyMode::Minor,
+                },
+                vec![pcs(&["E", "G#", "B"]), pcs(&["A", "C", "E"])],
+                CadenceKind::Authentic,
+                "V → i",
+            ),
+            (
+                Key {
+                    tonic: PitchClass::parse("C").unwrap(),
+                    mode: KeyMode::Major,
+                },
+                vec![pcs(&["G", "B", "D"]), pcs(&["A", "C", "E"])],
+                CadenceKind::Deceptive,
+                "V → vi",
+            ),
+        ] {
+            let analysis = analyze_progression_in_key(&key, &chords, &opts);
+            assert_eq!(analysis.cadence_hints.len(), 1);
+            assert_eq!(analysis.cadence_hints[0].kind, expected_kind);
+            assert_eq!(analysis.cadence_hints[0].detail, expected_detail);
+        }
+    }
 
     #[test]
     fn diatonic_vi_in_major() {
