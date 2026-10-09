@@ -310,7 +310,12 @@ pub fn analyze_chord_in_key(
 
     for sp in &spellings {
         // 1) Diatonic roman numeral candidate.
-        if chord_is_in_key_pitch_set {
+        // A fully diminished seventh is symmetric, so every chord tone is a
+        // candidate root; only the raised leading tone in minor (vii°7) is
+        // diatonic. ii°7, iv°7 and vi°7 would spell different pitches.
+        let dim7_off_leading_tone = sp.seventh == Some(SeventhQuality::Diminished7)
+            && !(key.mode == KeyMode::Minor && sp.root.0 == mod12(key.tonic.0 as i32 + 11));
+        if chord_is_in_key_pitch_set && !dim7_off_leading_tone {
             if let Some((deg, deg_pc, deg_note)) = scale_degree_in_key_extended(key, sp.root) {
                 let rn = roman_for_degree(deg, sp.quality, sp.seventh);
                 let reason = format!(
@@ -655,6 +660,10 @@ fn tonicization_target_in_key(key: &Key, dom_root: PitchClass) -> Option<Toniciz
     // Target RN is the diatonic triad on that degree (major/minor/dim) *in the key*.
     // MVP heuristic: assume diatonic triad quality by mode+degree.
     let target_quality = diatonic_triad_quality(key.mode, deg);
+    // A diminished triad cannot be tonicized: no V/vii° in major, no V/ii° in minor.
+    if target_quality == TriadQuality::Diminished {
+        return None;
+    }
     let target_rn = roman_for_degree(deg, target_quality, None);
     Some(TonicizationTarget {
         target_pc,
@@ -672,12 +681,12 @@ fn diatonic_triad_quality(mode: KeyMode, deg: u8) -> TriadQuality {
         (KeyMode::Major, 5) => TriadQuality::Major,
         (KeyMode::Major, 6) => TriadQuality::Minor,
         (KeyMode::Major, 7) => TriadQuality::Diminished,
-        // Natural minor: i ii° III iv v VI VII
+        // Minor with the harmonic-minor dominant: i ii° III iv V VI VII
         (KeyMode::Minor, 1) => TriadQuality::Minor,
         (KeyMode::Minor, 2) => TriadQuality::Diminished,
         (KeyMode::Minor, 3) => TriadQuality::Major,
         (KeyMode::Minor, 4) => TriadQuality::Minor,
-        (KeyMode::Minor, 5) => TriadQuality::Minor,
+        (KeyMode::Minor, 5) => TriadQuality::Major,
         (KeyMode::Minor, 6) => TriadQuality::Major,
         (KeyMode::Minor, 7) => TriadQuality::Major,
         _ => TriadQuality::Major,
@@ -731,6 +740,59 @@ mod tests {
                 key.display()
             );
         }
+    }
+
+    #[test]
+    fn fully_diminished_seventh_in_minor_ranks_vii_first() {
+        let a_minor = Key {
+            tonic: PitchClass::parse("A").unwrap(),
+            mode: KeyMode::Minor,
+        };
+        let actual = labels(&a_minor, &pcs(&["G#", "B", "D", "F"]));
+        assert_eq!(
+            actual.first().map(String::as_str),
+            Some("vii°7"),
+            "{actual:?}"
+        );
+        assert!(
+            !actual
+                .iter()
+                .any(|l| l == "ii°7" || l == "iv°7" || l == "vi°7"),
+            "{actual:?}"
+        );
+    }
+
+    #[test]
+    fn diminished_triads_are_not_tonicized() {
+        let c_major = Key {
+            tonic: PitchClass::parse("C").unwrap(),
+            mode: KeyMode::Major,
+        };
+        let a_minor = Key {
+            tonic: PitchClass::parse("A").unwrap(),
+            mode: KeyMode::Minor,
+        };
+        // F#-A#-C# is V of B (vii° in C major, ii° in A minor).
+        for key in [&c_major, &a_minor] {
+            let actual = labels(key, &pcs(&["F#", "A#", "C#"]));
+            assert!(
+                !actual.iter().any(|l| l.starts_with("V/")),
+                "{}: {actual:?}",
+                key.display()
+            );
+        }
+    }
+
+    #[test]
+    fn secondary_dominant_of_dominant_in_minor_is_v_of_v() {
+        let a_minor = Key {
+            tonic: PitchClass::parse("A").unwrap(),
+            mode: KeyMode::Minor,
+        };
+        // B-D#-F# is V of E; the minor-key dominant is major, so V/V, not V/v.
+        let actual = labels(&a_minor, &pcs(&["B", "D#", "F#"]));
+        assert!(actual.iter().any(|l| l == "V/V"), "{actual:?}");
+        assert!(!actual.iter().any(|l| l == "V/v"), "{actual:?}");
     }
 
     #[test]
