@@ -18,6 +18,24 @@ labels, tonicization candidates, and relative-major/minor pivots.
 - Full roman-text parsing (`.rntxt`)
 - Enharmonic spelling, voice leading, figured bass
 
+## Library Example
+
+```rust
+use harmonia::{analyze_chord_in_key, AnalyzeChordOptions, Key, KeyMode, PitchClass};
+
+let key = Key { tonic: PitchClass::parse("C").unwrap(), mode: KeyMode::Major };
+let chord: Vec<PitchClass> = ["E", "G#", "B", "D"]
+    .iter()
+    .map(|n| PitchClass::parse(n).unwrap())
+    .collect();
+
+let labels: Vec<String> = analyze_chord_in_key(&key, &chord, &AnalyzeChordOptions::default())
+    .into_iter()
+    .map(|a| a.label)
+    .collect();
+assert!(labels.contains(&"V7/vi".to_string()));
+```
+
 ## CLI Examples
 
 Single chord in a key (secondary dominant):

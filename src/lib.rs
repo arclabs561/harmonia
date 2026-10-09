@@ -28,6 +28,11 @@
 //! - No full modulation detection (only local tonicization hints)
 //! - No borrowed chords / augmented-sixth / cadential 6/4, etc.
 
+// Compile and run the README's Rust examples as doctests.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+pub struct ReadmeDoctests;
+
 /// A pitch class in 12-TET, \(0..=11\).
 ///
 /// Mapping (sharp spelling):

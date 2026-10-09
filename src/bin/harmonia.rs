@@ -93,12 +93,13 @@ fn print_chord_result(
         // MVP schema: stable keys; values are intentionally simple.
         let labels: Vec<String> = analyses.iter().map(|a| a.label.clone()).collect();
         let pcs: Vec<u8> = chord_pcs.iter().map(|pc| pc.0).collect();
-        println!(
-            "{{\"schema_version\":1,\"key\":\"{}\",\"chord_pcs\":{:?},\"labels\":{:?}}}",
-            key.display(),
-            pcs,
-            labels
-        );
+        let out = serde_json::json!({
+            "schema_version": 1,
+            "key": key.display(),
+            "chord_pcs": pcs,
+            "labels": labels,
+        });
+        println!("{out}");
         return;
     }
 
@@ -147,13 +148,14 @@ fn print_prog_result(json: bool, key: &Key, chords: &[Vec<PitchClass>], pa: &Pro
                 )
             })
             .collect();
-        println!(
-            "{{\"schema_version\":1,\"key\":\"{}\",\"chords_pcs\":{:?},\"labels\":{:?},\"cadences\":{:?}}}",
-            key.display(),
-            chord_pcs,
-            labels,
-            cadences
-        );
+        let out = serde_json::json!({
+            "schema_version": 1,
+            "key": key.display(),
+            "chords_pcs": chord_pcs,
+            "labels": labels,
+            "cadences": cadences,
+        });
+        println!("{out}");
         return;
     }
 
