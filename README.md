@@ -5,20 +5,23 @@ Functional harmony helpers.
 This crate provides deterministic, pitch-class-based helpers for roman-numeral
 labels, tonicization candidates, and relative-major/minor pivots.
 
-## Public Invariants
+This crate is not published to crates.io; the `harmonia` name there belongs to
+another project. Run the examples below from a checkout.
+
+## Public invariants
 
 - Pitch-class only: `C# == Db` in the API.
 - Deterministic: same inputs produce same outputs, including ordering.
 - Candidates, not truth: outputs are plausible labels; ambiguity is expected.
 - No modulation inference: `V/x` is a local hint, not a detected key change.
 
-## Non-Goals
+## Non-goals
 
 - Audio / ML
 - Full roman-text parsing (`.rntxt`)
 - Enharmonic spelling, voice leading, figured bass
 
-## Library Example
+## Library example
 
 ```rust
 use harmonia::{analyze_chord_in_key, AnalyzeChordOptions, Key, KeyMode, PitchClass};
@@ -36,7 +39,7 @@ let labels: Vec<String> = analyze_chord_in_key(&key, &chord, &AnalyzeChordOption
 assert!(labels.contains(&"V7/vi".to_string()));
 ```
 
-## CLI Examples
+## CLI examples
 
 Single chord in a key (secondary dominant):
 
