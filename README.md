@@ -2,8 +2,8 @@
 
 Functional harmony helpers.
 
-This crate provides deterministic, pitch-class-based helpers for roman-numeral
-labels, tonicization candidates, and relative-major/minor pivots.
+Pitch-class-based helpers for roman-numeral labels, tonicization candidates,
+and the shared scale degrees between a major key and its relative minor.
 
 This crate is not published to crates.io; the `harmonia` name there belongs to
 another project. Run the examples below from a checkout.
